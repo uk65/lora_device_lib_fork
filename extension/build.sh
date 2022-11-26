@@ -8,9 +8,10 @@ boards=(heltec151)
 # possible apps
 apps=(ttn-otaa)
 
-board=boards[0]
-app=apps[0]
+board=${boards[0]}
+app=${apps[0]}
 debug="Debug"
+generator="Unix Makefiles"
 
 #======================================================================
 
@@ -45,6 +46,7 @@ help() {
     echo "-a app-name"
     echo "-b board"
     echo "-d (Debug-Build)"
+    echo "-n (Ninja build)"
     echo "-r (Rebuild ==> clean Build-Directory)"
     exit
 }
@@ -53,7 +55,7 @@ if [ ! -d "build" ]; then
     mkdir build
 fi
 
-while getopts "a:b:dr" option; do
+while getopts "a:b:dnr" option; do
     case $option in
         a) # application
             check_app $OPTARG;;
@@ -61,6 +63,9 @@ while getopts "a:b:dr" option; do
             check_board $OPTARG;;
         d) # debug
             echo "Debug";;
+        n) # use ninja
+            echo "Using Ninja build system ..."
+            generator="Ninja";;
         r) # rebuild
             echo "clean build directory" 
             rm -fR build/*;;
@@ -73,6 +78,7 @@ done
 cd build
 
 cmake \
+    -G "$generator" \
     -DCMAKE_BUILD_TYPE=$Debug \
     -DTOOLCHAIN_PREFIX="/usr/local/gcc-arm-none-eabi/" \
     -DCMAKE_TOOLCHAIN_FILE="../cmake/toolchain-arm-none-eabi.cmake" \
@@ -80,9 +86,9 @@ cmake \
     -DREGION="REGION_EU868" \
     -DBOARD="$board" \
     -DMBED_RADIO_SHIELD="sx1276" \
-    -DUSE_RADIO_DEBUG="ON" ..
+    ..
 
-make
+cmake --build .
 
 cd ..
 

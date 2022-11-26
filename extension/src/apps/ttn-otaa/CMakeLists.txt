@@ -1,42 +1,41 @@
 project(ttn-otaa)
-cmake_minimum_required(VERSION 3.6)
 
-# Allow selection of region
-option(REGION_EU433 "Region EU433" OFF)
-option(REGION_EU868 "Region EU868" ON)
-option(REGION_US915 "Region US915" OFF)
-option(REGION_AU915 "Region AU915" OFF)
-set(REGION_LIST REGION_EU433 REGION_EU868 REGION_US915 REGION_AU915)
-
-file(GLOB ${PROJECT_NAME}_SOURCES "${CMAKE_CURRENT_LIST_DIR}/${BOARD}/*.cpp")
+list(APPEND ${PROJECT_NAME}_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/${BOARD}/main.cpp"
+)
 
 add_executable(${PROJECT_NAME}
     ${${PROJECT_NAME}_SOURCES}
     # $<TARGET_OBJECTS:system>
     # $<TARGET_OBJECTS:radio>
     # $<TARGET_OBJECTS:peripherals>
-    #$<TARGET_OBJECTS:${BOARD}>
+    $<TARGET_OBJECTS:${BOARD}>
+    $<TARGET_OBJECTS:ldl-library>
 )
 
-foreach( REGION ${REGION_LIST} )
-    if(${REGION})
-        target_compile_definitions(${PROJECT_NAME} PUBLIC -D"${REGION}")
-    endif()
-endforeach()
+# undefined reference to `_exit'
+#target_link_options(${PROJECT_NAME} PRIVATE --specs=nosys.specs)
+
 
 # Add compile time definition for the mbed shield if set.
-target_compile_definitions(${PROJECT_NAME} PUBLIC -D${MBED_RADIO_SHIELD})
+target_compile_definitions(${PROJECT_NAME} PUBLIC 
+#    -D${MBED_RADIO_SHIELD}
+    $<BUILD_INTERFACE:$<TARGET_PROPERTY:ldl-library,INTERFACE_COMPILE_DEFINITIONS>>
+)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    # $<BUILD_INTERFACE:$<TARGET_PROPERTY:system,INTERFACE_INCLUDE_DIRECTORIES>>
-    # $<BUILD_INTERFACE:$<TARGET_PROPERTY:radio,INTERFACE_INCLUDE_DIRECTORIES>>
-    # $<BUILD_INTERFACE:$<TARGET_PROPERTY:peripherals,INTERFACE_INCLUDE_DIRECTORIES>>
-    #$<BUILD_INTERFACE:$<TARGET_PROPERTY:${BOARD},INTERFACE_INCLUDE_DIRECTORIES>>
+#     # $<BUILD_INTERFACE:$<TARGET_PROPERTY:system,INTERFACE_INCLUDE_DIRECTORIES>>
+#     # $<BUILD_INTERFACE:$<TARGET_PROPERTY:radio,INTERFACE_INCLUDE_DIRECTORIES>>
+#     # $<BUILD_INTERFACE:$<TARGET_PROPERTY:peripherals,INTERFACE_INCLUDE_DIRECTORIES>>
+    $<BUILD_INTERFACE:$<TARGET_PROPERTY:${BOARD},INTERFACE_INCLUDE_DIRECTORIES>>
+    $<BUILD_INTERFACE:$<TARGET_PROPERTY:ldl-library,INTERFACE_INCLUDE_DIRECTORIES>>
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
-target_link_libraries(${PROJECT_NAME} m)
+
+#target_link_libraries(${PROJECT_NAME} m)
 
 #---------------------------------------------------------------------------------------
 # Debugging and Binutils
