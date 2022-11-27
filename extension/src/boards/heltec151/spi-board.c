@@ -1,18 +1,28 @@
 
+#include "stm32l1xx.h"
 #include "spi-board.h"
 
-void chip_set_mode(void *self, enum ldl_chip_mode mode)
+void spiInit(void)
 {
+#if 0
+    // PA4: SPI1_NSS, PA5: SPI1_SCK, PA6: SPI1_MISO, PA7: SPI1_MOSI
+    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
+    GPIOA->CRL |= GPIO_CRL_MODE5 | GPIO_CRL_CNF5;   // output high-speed alternate open-drain
+    GPIOA->CRL |= GPIO_CRL_MODE7 | GPIO_CRL_CNF7;   // output high-speed alternate open-drain
+
+    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+    SPI1->CR1 |= SPI_CR1_SPE;
+#endif
 }
 
-bool chip_write(void *self, const void *opcode, size_t opcode_size, const void *data, size_t size)
+uint8_t spiTransfer(uint8_t byte)
 {
-    return true;
+    SPI1->DR = byte;
+    while (! (SPI1->CR2 & SPI_CR2_TXEIE));
+
+    return SPI1->DR;
 }
 
-bool chip_read(void *self, const void *opcode, size_t opcode_size, void *data, size_t size)
-{
-    return true;
-}
 
 
